@@ -21,14 +21,15 @@ await sequelize
     console.error("Unable to connect to the database:", err);
   });
 
-await sequelize
-  .sync({ force: true })
-  .then(() => {
-    console.log("Database synced successfully.");
-  })
-  .catch((err) => {
-    console.error("Error syncing database:", err);
-  });
+// await sequelize
+//   .sync({ force: true })
+//   .then(() => {
+//     console.log("Database synced successfully.");
+//   })
+//   .catch((err) => {
+//     console.error("Error syncing database:", err);
+//   });
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
