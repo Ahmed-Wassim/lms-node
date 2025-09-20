@@ -2,6 +2,7 @@ import express from "express";
 import "dotenv/config";
 import { sequelize } from "./models/index.js";
 import userRoutes from "./routes/userRoutes.js";
+import morgan from "morgan";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
