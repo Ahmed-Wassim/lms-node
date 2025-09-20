@@ -55,7 +55,7 @@ export const loginUser = async ({ email, password }) => {
   };
 };
 
-export const forgetPasswordUser = async ({ email }) => {
+export const forgetPassword = async ({ email }) => {
   console.log("available associations", db.User.associations);
   const user = await db.User.findOne({ where: { email } });
   if (!user) {
@@ -67,10 +67,10 @@ export const forgetPasswordUser = async ({ email }) => {
 
   console.log(code, hashedCode);
 
-  const resetCode = await db.ResetToken.create({
+  await db.ResetToken.create({
     token: hashedCode,
     userId: user.id,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
   });
 
   const html = `
@@ -84,4 +84,40 @@ export const forgetPasswordUser = async ({ email }) => {
   await sendEmail(user.email, "Reset Password", html);
 
   return { message: "Email sent successfully" };
+};
+
+export const verifyResetCode = async ({ code, email }) => {
+  const user = await db.User.findOne({ where: { email } });
+
+  const resetToken = await db.ResetToken.findOne({
+    where: { userId: user.id },
+    order: [["createdAt", "DESC"]],
+  });
+
+  if (!resetToken) {
+    throw new Error("Invalid reset code db");
+  }
+
+  const isMatch = await bcrypt.compare(code, resetToken.token);
+
+  if (!isMatch) {
+    throw new Error("Invalid reset code");
+  }
+
+  if (resetToken.expiresAt < new Date()) {
+    throw new Error("Reset code has expired");
+  }
+
+  return { message: "Reset code is valid" };
+};
+
+export const resetPassword = async ({ email, newPassword }) => {
+  const user = await db.User.findOne({ where: { email } });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  await user.update({ password: newPassword });
+
+  return { message: "Password reset successfully" };
 };

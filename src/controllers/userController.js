@@ -1,7 +1,9 @@
 import {
   registerUser,
   loginUser,
-  forgetPasswordUser,
+  forgetPassword as forgetPasswordService,
+  verifyResetCode as verifyResetCodeService,
+  resetPassword as resetPasswordService,
 } from "../services/userService.js";
 
 export const register = async (req, res) => {
@@ -18,6 +20,18 @@ export const login = async (req, res) => {
 
 export const forgetPassword = async (req, res) => {
   const { email } = req.body;
-  const message = await forgetPasswordUser({ email });
+  const message = await forgetPasswordService({ email });
+  res.status(200).json(message);
+};
+
+export const verifyResetCode = async (req, res) => {
+  const { code, email } = req.body;
+  const message = await verifyResetCodeService({ code, email });
+  res.status(200).json(message);
+};
+
+export const resetPassword = async (req, res) => {
+  const { email, newPassword } = req.body;
+  const message = await resetPasswordService({ email, newPassword });
   res.status(200).json(message);
 };
