@@ -1,3 +1,8 @@
 import sequelize from "../config/database.js";
+import User from "./user.js";
 
-export { sequelize };
+const db = {
+  User,
+};
+
+export { sequelize, db };
