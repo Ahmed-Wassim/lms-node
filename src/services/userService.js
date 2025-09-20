@@ -1,4 +1,5 @@
 import { db } from "../models/index.js";
+import { sendEmail } from "../utils/email.js";
 import { generateToken } from "../utils/jwt.js";
 import bcrypt from "bcryptjs";
 
@@ -52,4 +53,35 @@ export const loginUser = async ({ email, password }) => {
       role: user.role,
     },
   };
+};
+
+export const forgetPasswordUser = async ({ email }) => {
+  console.log("available associations", db.User.associations);
+  const user = await db.User.findOne({ where: { email } });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedCode = await bcrypt.hash(code, 10);
+
+  console.log(code, hashedCode);
+
+  const resetCode = await db.ResetToken.create({
+    token: hashedCode,
+    userId: user.id,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+  });
+
+  const html = `
+    <div>
+      <h1>Reset Password</h1>
+      <p>Please use the following code to reset your password:</p>
+      <p>${code}</p>
+    </div>
+  `;
+
+  await sendEmail(user.email, "Reset Password", html);
+
+  return { message: "Email sent successfully" };
 };
