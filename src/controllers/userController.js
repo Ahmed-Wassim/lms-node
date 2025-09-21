@@ -4,7 +4,10 @@ import {
   forgetPassword as forgetPasswordService,
   verifyResetCode as verifyResetCodeService,
   resetPassword as resetPasswordService,
+  refresh as refreshTokenService,
+  logout as logoutService,
 } from "../services/userService.js";
+import { generateRefreshToken } from "../utils/jwt.js";
 
 export const register = async (req, res) => {
   const { email, password, name, role } = req.body;
@@ -34,4 +37,16 @@ export const resetPassword = async (req, res) => {
   const { email, newPassword } = req.body;
   const message = await resetPasswordService({ email, newPassword });
   res.status(200).json(message);
+};
+
+export const refreshToken = async (req, res) => {
+  const { userId, refreshToken } = req.user;
+  const newRefreshToken = await refreshTokenService({ userId, refreshToken });
+  res.status(200).json({ refreshToken: newRefreshToken });
+};
+
+export const logout = async (req, res) => {
+  const { userId, refreshToken } = req.user;
+  await logoutService(userId, refreshToken);
+  res.status(200).json({ message: "Logout successful" });
 };

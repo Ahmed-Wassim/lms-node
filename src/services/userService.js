@@ -1,6 +1,10 @@
 import { db } from "../models/index.js";
 import { sendEmail } from "../utils/email.js";
-import { generateToken } from "../utils/jwt.js";
+import {
+  generateRefreshToken,
+  generateToken,
+  verifyToken,
+} from "../utils/jwt.js";
 import bcrypt from "bcryptjs";
 
 export const registerUser = async ({ email, password, name, role }) => {
@@ -44,8 +48,21 @@ export const loginUser = async ({ email, password }) => {
     name: user.name,
   });
 
+  const refreshToken = generateRefreshToken({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+  });
+
+  await db.RefreshToken.create({
+    token: refreshToken,
+    userId: user.id,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
   return {
     token,
+    refreshToken,
     user: {
       id: user.id,
       email: user.email,
@@ -121,3 +138,31 @@ export const resetPassword = async ({ email, newPassword }) => {
 
   return { message: "Password reset successfully" };
 };
+
+export async function refresh(oldToken) {
+  const decoded = verifyToken(oldToken);
+
+  const stored = await db.RefreshToken.findOne({
+    where: { token: oldToken, userId: decoded.id },
+  });
+  if (!stored || stored.expiresAt < new Date()) {
+    throw new Error("Invalid or expired refresh token");
+  }
+
+  await stored.destroy();
+
+  const newAccess = generateToken({ id: decoded.id });
+  const newRefresh = generateRefreshToken({ id: decoded.id });
+
+  await db.RefreshToken.create({
+    token: newRefresh,
+    userId: decoded.id,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
+  return { accessToken: newAccess, refreshToken: newRefresh };
+}
+
+export async function logout(userId, refreshToken) {
+  await db.RefreshToken.destroy({ where: { userId, token: refreshToken } });
+}
